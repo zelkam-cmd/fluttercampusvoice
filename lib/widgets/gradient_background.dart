@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class GradientBackground extends StatelessWidget {
   final Widget child;
@@ -11,14 +11,9 @@ class GradientBackground extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFDDE6FA), // Soft lavender blue
-            Color(0xFFEFE8FC), // Soft purple mid
-            Color(0xFFDFF3EC), // Soft mint green
-          ],
+        image: DecorationImage(
+          image: AssetImage('assets/images/background.png'),
+          fit: BoxFit.cover,
         ),
       ),
       child: SafeArea(child: child),

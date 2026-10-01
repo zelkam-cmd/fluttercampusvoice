@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/student.dart';
@@ -20,10 +20,10 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
 
   String get displayName {
-    if (_currentRole == 'student' && _currentStudent != null) {
-      return _currentStudent!.fullName;
-    } else if (_currentRole == 'admin' && _currentAdmin != null) {
+    if (_currentRole == 'admin' && _currentAdmin != null) {
       return _currentAdmin!['fullName']?.toString() ?? 'Admin';
+    } else if (_currentStudent != null) {
+      return _currentStudent!.fullName;
     }
     return 'User';
   }
@@ -32,16 +32,18 @@ class AuthService extends ChangeNotifier {
     return _currentRole == 'admin' ? 'Administrator' : 'Student';
   }
 
+  /// Unified login that automatically detects whether credentials belong to an Admin or Student
   Future<bool> login({
-    required String identifier, // Student ID or Email / Username
+    required String identifier, // Student ID, Username, or Email
     required String password,
-    required String role, // 'student' or 'admin'
+    String? role, // Optional: if provided, forces role; if omitted, auto-detects
   }) async {
     final cleanId = identifier.trim();
     final cleanPass = password.trim();
 
     try {
-      if (role == 'admin') {
+      // 1. Check Admin (if role is admin or auto-detecting)
+      if (role == null || role == 'admin') {
         final url = Uri.parse('${FirebaseService.baseUrl}/admins.json');
         final response = await http.get(url);
         if (response.statusCode == 200 && response.body != 'null') {
@@ -81,8 +83,10 @@ class AuthService extends ChangeNotifier {
           notifyListeners();
           return true;
         }
-      } else {
-        // Student login
+      }
+
+      // 2. Check Student (if role is student or auto-detecting)
+      if (role == null || role == 'student') {
         final url = Uri.parse('${FirebaseService.baseUrl}/students.json');
         final response = await http.get(url);
         if (response.statusCode == 200 && response.body != 'null') {
@@ -109,7 +113,7 @@ class AuthService extends ChangeNotifier {
           }
         }
 
-        // Fallback demo student matching the user screenshot
+        // Fallback demo student matching user demo
         if (cleanId == '2023-100234' ||
             cleanId.toLowerCase().contains('jaredd') ||
             cleanPass == 'password123' ||
@@ -139,8 +143,8 @@ class AuthService extends ChangeNotifier {
 
       return false;
     } catch (e) {
-      // Offline / fallback demo login for instant responsiveness
-      if (role == 'admin') {
+      // Offline fallback
+      if (cleanId == 'admin') {
         _currentAdmin = {
           'id': 'admin_1',
           'username': 'admin',
@@ -155,7 +159,7 @@ class AuthService extends ChangeNotifier {
       } else {
         _currentStudent = Student(
           id: '2023-100234',
-          studentNumber: '2023-100234',
+          studentNumber: cleanId.isNotEmpty ? cleanId : '2023-100234',
           fullName: 'Jaredd Catalan',
           firstName: 'Jaredd',
           lastName: 'Catalan',
